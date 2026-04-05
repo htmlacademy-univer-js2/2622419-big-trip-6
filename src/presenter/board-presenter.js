@@ -3,12 +3,16 @@ import SortView from '../view/sort-view.js';
 import EventListView from '../view/event-list-view.js';
 import EventEditView from '../view/event-edit-view.js';
 import EventView from '../view/event-view.js';
+import NoPointView from '../view/no-point-view.js';
 
 export default class BoardPresenter {
   #boardContainer = null;
   #pointsModel = null;
-  #sortComponent = new SortView();
+
   #eventListComponent = new EventListView();
+  #sortComponent = new SortView();
+  #noPointComponent = new NoPointView(); // КОМПОНЕНТ ТУТ
+
   #boardPoints = [];
   #boardDestinations = [];
 
@@ -21,6 +25,16 @@ export default class BoardPresenter {
     this.#boardPoints = [...this.#pointsModel.getPoints()];
     this.#boardDestinations = [...this.#pointsModel.getDestinations()];
 
+    this.#renderBoard();
+  }
+
+  #renderBoard() {
+    // ПРОВЕРКА: Если точек 0, рисуем только заглушку
+    if (this.#boardPoints.length === 0) {
+      render(this.#noPointComponent, this.#boardContainer);
+      return;
+    }
+
     render(this.#sortComponent, this.#boardContainer);
     render(this.#eventListComponent, this.#boardContainer);
 
@@ -30,6 +44,9 @@ export default class BoardPresenter {
   }
 
   #renderPoint(point, destinations) {
+    // ... (весь твой код метода #renderPoint остается без изменений) ...
+    // Скопируй его из прошлого задания полностью
+
     const escKeyDownHandler = (evt) => {
       if (evt.key === 'Escape' || evt.key === 'Esc') {
         evt.preventDefault();
