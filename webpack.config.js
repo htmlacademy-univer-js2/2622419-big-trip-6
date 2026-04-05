@@ -3,13 +3,13 @@ const CopyPlugin = require('copy-webpack-plugin');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 
 module.exports = {
-  entry: './src/main.js', // Убедись, что путь к main.js правильный
+  entry: './src/main.js',
   output: {
     path: path.resolve(__dirname, 'build'),
     filename: 'bundle.[contenthash].js',
     clean: true,
   },
-  devtool: 'source-map',
+  devtool: 'source-map',  
   plugins: [
     new HtmlWebpackPlugin({
       template: 'public/index.html',
