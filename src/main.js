@@ -12,5 +12,7 @@ const boardPresenter = new BoardPresenter({
   pointsModel,
 });
 
+// Теперь этот render поймет новые компоненты
 render(new FilterView(), siteHeaderElement);
+
 boardPresenter.init();
