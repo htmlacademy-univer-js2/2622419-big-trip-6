@@ -9,7 +9,7 @@ module.exports = {
     filename: 'bundle.[contenthash].js',
     clean: true,
   },
-  devtool: 'source-map',
+  devtool: 'source-map',  
   plugins: [
     new HtmlWebpackPlugin({
       template: 'public/index.html',
