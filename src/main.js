@@ -1,4 +1,4 @@
-import {render} from './render.js';
+import {render} from './framework/render.js'; // МЕНЯЕМ ПУТЬ ТУТ
 import FilterView from './view/filter-view.js';
 import BoardPresenter from './presenter/board-presenter.js';
 import PointsModel from './model/points-model.js';
@@ -12,5 +12,7 @@ const boardPresenter = new BoardPresenter({
   pointsModel,
 });
 
+// Теперь этот render поймет новые компоненты
 render(new FilterView(), siteHeaderElement);
+
 boardPresenter.init();

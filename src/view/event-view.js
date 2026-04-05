@@ -1,4 +1,4 @@
-import {createElement} from '../render.js';
+import AbstractView from '../framework/view/abstract-view.js';
 
 function createEventTemplate(point, destination) {
   const {type, basePrice, isFavorite} = point;
@@ -37,24 +37,27 @@ function createEventTemplate(point, destination) {
   );
 }
 
-export default class EventView {
-  constructor({point, destination}) {
-    this.point = point;
-    this.destination = destination;
+export default class EventView extends AbstractView {
+  #point = null;
+  #destination = null;
+  #handleEditClick = null;
+
+  constructor({point, destination, onEditClick}) {
+    super();
+    this.#point = point;
+    this.#destination = destination;
+    this.#handleEditClick = onEditClick;
+
+    this.element.querySelector('.event__rollup-btn')
+      .addEventListener('click', this.#editClickHandler);
   }
 
-  getTemplate() {
-    return createEventTemplate(this.point, this.destination);
+  get template() {
+    return createEventTemplate(this.#point, this.#destination);
   }
 
-  getElement() {
-    if (!this.element) {
-      this.element = createElement(this.getTemplate());
-    }
-    return this.element;
-  }
-
-  removeElement() {
-    this.element = null;
-  }
+  #editClickHandler = (evt) => {
+    evt.preventDefault();
+    this.#handleEditClick();
+  };
 }
