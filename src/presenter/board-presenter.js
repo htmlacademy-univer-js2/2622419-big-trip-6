@@ -8,22 +8,24 @@ export default class BoardPresenter {
   sortComponent = new SortView();
   eventListComponent = new EventListView();
 
-  constructor({boardContainer}) {
+  constructor({boardContainer, pointsModel}) {
     this.boardContainer = boardContainer;
+    this.pointsModel = pointsModel;
   }
 
   init() {
-    // Отрисовываем сортировку
-    render(this.sortComponent, this.boardContainer);
-    // Отрисовываем контейнер для списка (ul)
-    render(this.eventListComponent, this.boardContainer);
+    this.boardPoints = [...this.pointsModel.getPoints()];
+    this.boardDestinations = [...this.pointsModel.getDestinations()];
 
-    // Отрисовываем форму редактирования (1 шт, первая в списке)
+    render(this.sortComponent, this.boardContainer);
+    render(this.eventListComponent, this.boardContainer);
     render(new EventEditView(), this.eventListComponent.getElement());
 
-    // Отрисовываем 3 точки маршрута
-    for (let i = 0; i < 3; i++) {
-      render(new EventView(), this.eventListComponent.getElement());
+    for (let i = 0; i < this.boardPoints.length; i++) {
+      const point = this.boardPoints[i];
+      const destination = this.boardDestinations.find((dest) => dest.id === point.destination);
+
+      render(new EventView({point, destination}), this.eventListComponent.getElement());
     }
   }
 }

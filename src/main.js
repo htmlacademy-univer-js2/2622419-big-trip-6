@@ -1,14 +1,16 @@
 import {render} from './render.js';
 import FilterView from './view/filter-view.js';
 import BoardPresenter from './presenter/board-presenter.js';
+import PointsModel from './model/points-model.js';
 
-// Находим места в index.html, куда будем вставлять код
 const siteHeaderElement = document.querySelector('.trip-controls__filters');
 const siteMainElement = document.querySelector('.trip-events');
 
-// Отрисовываем фильтры в шапку
-render(new FilterView(), siteHeaderElement);
+const pointsModel = new PointsModel();
+const boardPresenter = new BoardPresenter({
+  boardContainer: siteMainElement,
+  pointsModel,
+});
 
-// Создаем презентер и передаем ему контейнер, куда рисовать остальное
-const boardPresenter = new BoardPresenter({boardContainer: siteMainElement});
+render(new FilterView(), siteHeaderElement);
 boardPresenter.init();
