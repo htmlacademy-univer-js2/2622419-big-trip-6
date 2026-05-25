@@ -1,6 +1,5 @@
 import AbstractStatefulView from '../framework/view/abstract-stateful-view.js';
 import {humanizeFormDate} from '../utils/date.js';
-// Подключаем flatpickr и его стили
 import flatpickr from 'flatpickr';
 import 'flatpickr/dist/flatpickr.min.css';
 
@@ -93,18 +92,19 @@ export default class EventEditView extends AbstractStatefulView {
   #offers = null;
   #handleFormSubmit = null;
   #handleRollupClick = null;
+  #handleDeleteClick = null; // Добавили обработчик удаления
 
-  // Добавляем переменные для календарей
   #datepickerFrom = null;
   #datepickerTo = null;
 
-  constructor({point, destinations, offers, onFormSubmit, onRollupClick}) {
+  constructor({point, destinations, offers, onFormSubmit, onRollupClick, onDeleteClick}) { // Добавили onDeleteClick
     super();
     this._setState(EventEditView.parsePointToState(point));
     this.#destinations = destinations;
     this.#offers = offers;
     this.#handleFormSubmit = onFormSubmit;
     this.#handleRollupClick = onRollupClick;
+    this.#handleDeleteClick = onDeleteClick;
 
     this._restoreHandlers();
   }
@@ -113,7 +113,6 @@ export default class EventEditView extends AbstractStatefulView {
     return createEventEditTemplate(this._state, this.#destinations, this.#offers);
   }
 
-  // Перегружаем метод удаления элемента, чтобы уничтожить календари
   removeElement() {
     super.removeElement();
     if (this.#datepickerFrom) {
@@ -136,9 +135,12 @@ export default class EventEditView extends AbstractStatefulView {
     this.element.querySelector('form').addEventListener('submit', this.#formSubmitHandler);
     this.element.querySelector('.event__rollup-btn').addEventListener('click', this.#rollupClickHandler);
     this.element.querySelector('.event__type-group').addEventListener('change', this.#typeChangeHandler);
-    this.element.querySelector('.event__input--destination').addEventListener('change', this.#destinationChangeHandler);
 
-    // Инициализируем календари после каждой перерисовки
+    // Слушатели для валидации и удаления
+    this.element.querySelector('.event__input--destination').addEventListener('change', this.#destinationChangeHandler);
+    this.element.querySelector('.event__input--price').addEventListener('input', this.#priceInputHandler);
+    this.element.querySelector('.event__reset-btn').addEventListener('click', this.#formDeleteClickHandler);
+
     this.#setDatepickers();
   }
 
@@ -161,7 +163,7 @@ export default class EventEditView extends AbstractStatefulView {
         enableTime: true,
         'time_24hr': true,
         defaultDate: this._state.dateTo,
-        minDate: this._state.dateFrom, // Конец поездки не может быть раньше начала
+        minDate: this._state.dateFrom,
         onChange: this.#dateToChangeHandler,
       }
     );
@@ -191,11 +193,24 @@ export default class EventEditView extends AbstractStatefulView {
     evt.preventDefault();
     const selectedDestination = this.#destinations.find((dest) => dest.name === evt.target.value);
 
-    if (selectedDestination) {
-      this.updateElement({
-        destination: selectedDestination.id,
-      });
+    // Если ввели фигню, сбрасываем инпут
+    if (!selectedDestination) {
+      evt.target.value = '';
+      return;
     }
+
+    this.updateElement({
+      destination: selectedDestination.id,
+    });
+  };
+
+  #priceInputHandler = (evt) => {
+    evt.preventDefault();
+    // Стираем всё, кроме цифр
+    evt.target.value = evt.target.value.replace(/\D/g, '');
+    this._setState({
+      basePrice: parseInt(evt.target.value, 10) || 0,
+    });
   };
 
   #formSubmitHandler = (evt) => {
@@ -206,6 +221,11 @@ export default class EventEditView extends AbstractStatefulView {
   #rollupClickHandler = (evt) => {
     evt.preventDefault();
     this.#handleRollupClick();
+  };
+
+  #formDeleteClickHandler = (evt) => {
+    evt.preventDefault();
+    this.#handleDeleteClick(EventEditView.parseStateToPoint(this._state));
   };
 
   static parsePointToState(point) {

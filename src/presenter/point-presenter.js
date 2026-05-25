@@ -1,6 +1,7 @@
 import {render, replace, remove} from '../framework/render.js';
 import EventView from '../view/event-view.js';
 import EventEditView from '../view/event-edit-view.js';
+import {UserAction, UpdateType} from '../const.js'; // Подключили команды
 
 const Mode = {
   DEFAULT: 'DEFAULT',
@@ -30,7 +31,6 @@ export default class PointPresenter {
     const prevPointComponent = this.#pointComponent;
     const prevPointEditComponent = this.#pointEditComponent;
 
-    // Находим пункт назначения конкретно для этой карточки
     const currentDestination = allDestinations.find((dest) => dest.id === this.#point.destination);
 
     this.#pointComponent = new EventView({
@@ -42,10 +42,11 @@ export default class PointPresenter {
 
     this.#pointEditComponent = new EventEditView({
       point: this.#point,
-      destinations: allDestinations, // Передаем все города
-      offers: allOffers,             // Передаем все опции
+      destinations: allDestinations,
+      offers: allOffers,
       onFormSubmit: this.#handleFormSubmit,
       onRollupClick: this.#handleRollupClick,
+      onDeleteClick: this.#handleDeleteClick, // Передали функцию удаления в форму!
     });
 
     if (prevPointComponent === null || prevPointEditComponent === null) {
@@ -72,7 +73,7 @@ export default class PointPresenter {
 
   resetView() {
     if (this.#mode !== Mode.DEFAULT) {
-      this.#pointEditComponent.reset(this.#point); // Сбрасываем состояние формы до исходных данных точки
+      this.#pointEditComponent.reset(this.#point);
       this.#replaceFormToCard();
     }
   }
@@ -93,7 +94,7 @@ export default class PointPresenter {
   #escKeyDownHandler = (evt) => {
     if (evt.key === 'Escape') {
       evt.preventDefault();
-      this.#pointEditComponent.reset(this.#point); // Сбрасываем форму при закрытии по Esc
+      this.#pointEditComponent.reset(this.#point);
       this.#replaceFormToCard();
     }
   };
@@ -102,17 +103,36 @@ export default class PointPresenter {
     this.#replaceCardToForm();
   };
 
+  // Говорим: "Обнови точку (изменилась звездочка)"
   #handleFavoriteClick = () => {
-    this.#handleDataChange({...this.#point, isFavorite: !this.#point.isFavorite});
+    this.#handleDataChange(
+      UserAction.UPDATE_POINT,
+      UpdateType.PATCH,
+      {...this.#point, isFavorite: !this.#point.isFavorite}
+    );
   };
 
+  // Говорим: "Обнови точку (сохранили форму)"
   #handleFormSubmit = (point) => {
-    this.#handleDataChange(point);
+    this.#handleDataChange(
+      UserAction.UPDATE_POINT,
+      UpdateType.MINOR,
+      point
+    );
     this.#replaceFormToCard();
   };
 
+  // Говорим: "УДАЛИ точку!"
+  #handleDeleteClick = (point) => {
+    this.#handleDataChange(
+      UserAction.DELETE_POINT,
+      UpdateType.MINOR,
+      point
+    );
+  };
+
   #handleRollupClick = () => {
-    this.#pointEditComponent.reset(this.#point); // Сбрасываем форму при закрытии по стрелке вверх
+    this.#pointEditComponent.reset(this.#point);
     this.#replaceFormToCard();
   };
 }
