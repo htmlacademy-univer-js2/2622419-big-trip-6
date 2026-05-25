@@ -1,13 +1,14 @@
-import AbstractStatefulView from '../framework/view/abstract-stateful-view.js'; // Меняем импорт на Stateful
+import AbstractStatefulView from '../framework/view/abstract-stateful-view.js';
+import {humanizeFormDate} from '../utils/date.js';
+// Подключаем flatpickr и его стили
+import flatpickr from 'flatpickr';
+import 'flatpickr/dist/flatpickr.min.css';
 
 function createEventEditTemplate(state, allDestinations, allOffers) {
-  const {type, basePrice, destination} = state;
+  const {type, basePrice, destination, dateFrom, dateTo} = state;
 
-  // Ищем данные выбранного города и доступные опции для текущего типа
   const currentDestination = allDestinations.find((dest) => dest.id === destination);
   const currentTypeOffers = allOffers.find((off) => off.type === type)?.offers || [];
-
-  // Генерируем список городов для выпадающей подсказки (datalist)
   const destinationOptions = allDestinations.map((dest) => `<option value="${dest.name}"></option>`).join('');
 
   return (
@@ -32,7 +33,7 @@ function createEventEditTemplate(state, allDestinations, allOffers) {
                   <input id="event-type-flight-1" class="event__type-input  visually-hidden" type="radio" name="event-type" value="flight" ${type === 'flight' ? 'checked' : ''}>
                   <label class="event__type-label  event__type-label--flight" for="event-type-flight-1">Flight</label>
                 </div>
-                </fieldset>
+              </fieldset>
             </div>
           </div>
 
@@ -42,6 +43,14 @@ function createEventEditTemplate(state, allDestinations, allOffers) {
             <datalist id="destination-list-1">
               ${destinationOptions}
             </datalist>
+          </div>
+
+          <div class="event__field-group  event__field-group--time">
+            <label class="visually-hidden" for="event-start-time-1">From</label>
+            <input class="event__input  event__input--time" id="event-start-time-1" type="text" name="event-start-time" value="${humanizeFormDate(dateFrom)}">
+            &mdash;
+            <label class="visually-hidden" for="event-end-time-1">To</label>
+            <input class="event__input  event__input--time" id="event-end-time-1" type="text" name="event-end-time" value="${humanizeFormDate(dateTo)}">
           </div>
 
           <div class="event__field-group  event__field-group--price">
@@ -79,16 +88,18 @@ function createEventEditTemplate(state, allDestinations, allOffers) {
   );
 }
 
-// Наследуемся от нового класса
 export default class EventEditView extends AbstractStatefulView {
   #destinations = null;
   #offers = null;
   #handleFormSubmit = null;
   #handleRollupClick = null;
 
+  // Добавляем переменные для календарей
+  #datepickerFrom = null;
+  #datepickerTo = null;
+
   constructor({point, destinations, offers, onFormSubmit, onRollupClick}) {
     super();
-    // Конвертируем точку в State
     this._setState(EventEditView.parsePointToState(point));
     this.#destinations = destinations;
     this.#offers = offers;
@@ -102,27 +113,77 @@ export default class EventEditView extends AbstractStatefulView {
     return createEventEditTemplate(this._state, this.#destinations, this.#offers);
   }
 
+  // Перегружаем метод удаления элемента, чтобы уничтожить календари
+  removeElement() {
+    super.removeElement();
+    if (this.#datepickerFrom) {
+      this.#datepickerFrom.destroy();
+      this.#datepickerFrom = null;
+    }
+    if (this.#datepickerTo) {
+      this.#datepickerTo.destroy();
+      this.#datepickerTo = null;
+    }
+  }
+
   reset(point) {
     this.updateElement(
       EventEditView.parsePointToState(point),
     );
   }
 
-  // Этот метод вызывается автоматически после каждой перерисовки формы (updateElement)
   _restoreHandlers() {
     this.element.querySelector('form').addEventListener('submit', this.#formSubmitHandler);
     this.element.querySelector('.event__rollup-btn').addEventListener('click', this.#rollupClickHandler);
-
-    // Новые слушатели для интерактивности
     this.element.querySelector('.event__type-group').addEventListener('change', this.#typeChangeHandler);
     this.element.querySelector('.event__input--destination').addEventListener('change', this.#destinationChangeHandler);
+
+    // Инициализируем календари после каждой перерисовки
+    this.#setDatepickers();
   }
+
+  #setDatepickers() {
+    this.#datepickerFrom = flatpickr(
+      this.element.querySelector('#event-start-time-1'),
+      {
+        dateFormat: 'd/m/y H:i',
+        enableTime: true,
+        'time_24hr': true,
+        defaultDate: this._state.dateFrom,
+        onChange: this.#dateFromChangeHandler,
+      }
+    );
+
+    this.#datepickerTo = flatpickr(
+      this.element.querySelector('#event-end-time-1'),
+      {
+        dateFormat: 'd/m/y H:i',
+        enableTime: true,
+        'time_24hr': true,
+        defaultDate: this._state.dateTo,
+        minDate: this._state.dateFrom, // Конец поездки не может быть раньше начала
+        onChange: this.#dateToChangeHandler,
+      }
+    );
+  }
+
+  #dateFromChangeHandler = ([userDate]) => {
+    this.updateElement({
+      dateFrom: userDate,
+    });
+  };
+
+  #dateToChangeHandler = ([userDate]) => {
+    this.updateElement({
+      dateTo: userDate,
+    });
+  };
 
   #typeChangeHandler = (evt) => {
     evt.preventDefault();
     this.updateElement({
       type: evt.target.value,
-      offers: [], // По ТЗ: при смене типа сбрасываем выбранные ранее опции
+      offers: [],
     });
   };
 
@@ -147,12 +208,10 @@ export default class EventEditView extends AbstractStatefulView {
     this.#handleRollupClick();
   };
 
-  // Метод превращает данные точки в состояние (пока просто копируем)
   static parsePointToState(point) {
     return {...point};
   }
 
-  // Метод превращает состояние обратно в точку для отправки презентеру
   static parseStateToPoint(state) {
     const point = {...state};
     return point;
