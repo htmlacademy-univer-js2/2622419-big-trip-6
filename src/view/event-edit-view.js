@@ -74,7 +74,12 @@ function createEventEditTemplate(state, allDestinations, allOffers) {
   const destinationOptions = allDestinations.map((dest) => `<option value="${dest.name}"></option>`).join('');
 
   const isSubmitDisabled = isDisabled || !dateFrom || !dateTo || !basePrice || !destination;
-  const deleteCancelText = !id ? 'Cancel' : (isDeleting ? 'Deleting...' : 'Delete');
+  let deleteCancelText = 'Delete';
+  if (!id) {
+    deleteCancelText = 'Cancel';
+  } else if (isDeleting) {
+    deleteCancelText = 'Deleting...';
+  }
 
   const startTimeValue = dateFrom ? humanizeFormDate(dateFrom) : '';
   const endTimeValue = dateTo ? humanizeFormDate(dateTo) : '';
@@ -132,7 +137,7 @@ function createEventEditTemplate(state, allDestinations, allOffers) {
             ${deleteCancelText}
           </button>
 
-          ${id ? `<button class="event__rollup-btn" type="button"><span class="visually-hidden">Open event</span></button>` : ''}
+          ${id ? '<button class="event__rollup-btn" type="button"><span class="visually-hidden">Open event</span></button>' : ''}
         </header>
 
         <section class="event__details">
