@@ -33,4 +33,4 @@ export default class TripInfoView extends AbstractView {
       price: this.#price
     });
   }
-} 
+}
